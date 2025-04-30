@@ -52,15 +52,22 @@ class ReportStates(StatesGroup):
     waiting_for_report = State()
 
 async def send_reminder():
-    """Send reminder to admin every REMINDER_INTERVAL minutes"""
+    """Send reminder to admin every REMINDER_INTERVAL minutes if no report was submitted"""
     while True:
-        await asyncio.sleep(REMINDER_INTERVAL * 60)  # Convert minutes to seconds
-        admin_id = int(os.getenv('ADMIN_ID'))
-        await bot.send_message(
-            admin_id,
-            "⏰ Время заполнить отчет!",
-            reply_markup=main_keyboard
-        )
+        last_report_time = data_manager.get_last_report_time()
+        time_since_last_report = datetime.now() - last_report_time
+        
+        # Only send reminder if enough time has passed since the last report
+        if time_since_last_report.total_seconds() >= REMINDER_INTERVAL * 60:
+            admin_id = int(os.getenv('ADMIN_ID'))
+            await bot.send_message(
+                admin_id,
+                "⏰ Время заполнить отчет!",
+                reply_markup=main_keyboard
+            )
+        
+        # Wait for the reminder interval before checking again
+        await asyncio.sleep(REMINDER_INTERVAL * 60)
 
 async def enhance_log_with_gpt(log_entry: str) -> str:
     """Enhance log entry using GPT"""

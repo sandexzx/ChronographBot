@@ -29,6 +29,8 @@ class DataManager:
         logs = self.load_logs()
         logs.append(log_entry)
         self.save_logs(logs)
+        # Update last report time
+        self._update_last_report_time()
 
     def get_logs_by_time_period(self, time_delta) -> List[Dict[str, Any]]:
         """Get logs within a specific time period"""
@@ -37,4 +39,18 @@ class DataManager:
         return [
             log for log in logs
             if now - datetime.fromisoformat(log['timestamp']) <= time_delta
-        ] 
+        ]
+
+    def _update_last_report_time(self):
+        """Update the last report time to current time"""
+        with open('last_report_time.txt', 'w') as f:
+            f.write(datetime.now().isoformat())
+
+    def get_last_report_time(self) -> datetime:
+        """Get the last report time"""
+        try:
+            with open('last_report_time.txt', 'r') as f:
+                return datetime.fromisoformat(f.read())
+        except (FileNotFoundError, ValueError):
+            # If file doesn't exist or is invalid, return a very old date
+            return datetime.min 
