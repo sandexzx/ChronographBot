@@ -98,8 +98,8 @@ async def cmd_start(message: types.Message):
     logger.info(f"User {message.from_user.id} started the bot")
     if str(message.from_user.id) == os.getenv('ADMIN_ID'):
         await message.answer(
-            "👋 Привет! Я бот для ведения лога жизни.\n"
-            "Я буду напоминать тебе каждые 10 минут заполнить отчет.",
+            f"👋 Привет! Я бот для ведения лога жизни.\n"
+            f"Я буду напоминать тебе каждые {REMINDER_INTERVAL} минут заполнить отчет.",
             reply_markup=main_keyboard
         )
     else:
