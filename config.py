@@ -20,6 +20,7 @@ PROMPTS = {
     Please make the following log entry more structured and engaging.
     Add appropriate emojis and improve readability.
     Keep the original meaning but make it more professional and pleasant to read.
+    No need to add unnecessary information. Only to the point.
     Log entry: {log_entry}
     """,
     
