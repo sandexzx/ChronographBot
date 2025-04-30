@@ -33,6 +33,7 @@ main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📝 Заполнить отчет")],
         [KeyboardButton(text="📊 Статистика")],
+        [KeyboardButton(text="⚙️ Настройки")],
     ],
     resize_keyboard=True
 )
@@ -47,15 +48,35 @@ stats_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+settings_keyboard = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="5 минут"), KeyboardButton(text="10 минут")],
+        [KeyboardButton(text="15 минут"), KeyboardButton(text="30 минут")],
+        [KeyboardButton(text="1 час"), KeyboardButton(text="2 часа")],
+        [KeyboardButton(text="🔙 Назад")],
+    ],
+    resize_keyboard=True
+)
+
 # Define states
 class ReportStates(StatesGroup):
     waiting_for_report = State()
 
+class SettingsStates(StatesGroup):
+    waiting_for_interval = State()
+
 async def send_reminder():
     """Send reminder to admin every REMINDER_INTERVAL minutes if no report was submitted"""
+    global REMINDER_INTERVAL
     while True:
         last_report_time = data_manager.get_last_report_time()
         time_since_last_report = datetime.now() - last_report_time
+        
+        # Reload config to get the latest interval
+        import importlib
+        import config
+        importlib.reload(config)
+        REMINDER_INTERVAL = config.REMINDER_INTERVAL
         
         # Only send reminder if enough time has passed since the last report
         if time_since_last_report.total_seconds() >= REMINDER_INTERVAL * 60:
@@ -201,6 +222,55 @@ async def back_to_main(message: types.Message):
         "Возвращаемся в главное меню",
         reply_markup=main_keyboard
     )
+
+@dp.message(lambda message: message.text == "⚙️ Настройки")
+async def show_settings(message: types.Message):
+    if str(message.from_user.id) == os.getenv('ADMIN_ID'):
+        await message.answer(
+            "Выберите интервал между напоминаниями:",
+            reply_markup=settings_keyboard
+        )
+    else:
+        await message.answer("Извините, эта функция доступна только для администратора.")
+
+@dp.message(lambda message: message.text in ["5 минут", "10 минут", "15 минут", "30 минут", "1 час", "2 часа"])
+async def set_reminder_interval(message: types.Message):
+    global REMINDER_INTERVAL
+    if str(message.from_user.id) == os.getenv('ADMIN_ID'):
+        interval_map = {
+            "5 минут": 5,
+            "10 минут": 10,
+            "15 минут": 15,
+            "30 минут": 30,
+            "1 час": 60,
+            "2 часов": 120
+        }
+        
+        new_interval = interval_map[message.text]
+        # Update the interval in config
+        with open('config.py', 'r') as f:
+            config_content = f.read()
+        
+        config_content = config_content.replace(
+            f"REMINDER_INTERVAL = {REMINDER_INTERVAL}",
+            f"REMINDER_INTERVAL = {new_interval}"
+        )
+        
+        with open('config.py', 'w') as f:
+            f.write(config_content)
+        
+        # Reload the config
+        import importlib
+        import config
+        importlib.reload(config)
+        REMINDER_INTERVAL = config.REMINDER_INTERVAL
+        
+        await message.answer(
+            f"✅ Интервал напоминаний установлен на {message.text}",
+            reply_markup=main_keyboard
+        )
+    else:
+        await message.answer("Извините, эта функция доступна только для администратора.")
 
 async def main():
     logger.info("Starting Chronograph Bot")

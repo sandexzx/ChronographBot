@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 # Time intervals for reminders (in minutes)
-REMINDER_INTERVAL = 10  # 30 seconds in minutes
+REMINDER_INTERVAL = 5  # 30 seconds in minutes
 
 # Time intervals for statistics
 STATS_INTERVALS = {
