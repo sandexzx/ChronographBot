@@ -1,0 +1,4 @@
+aiogram
+python-dotenv
+openai>=1.0.0
+python-dateutil
